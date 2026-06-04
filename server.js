@@ -122,8 +122,14 @@ ${original}
 如需深度优化，可升级为高级会员获取一对一AI优化服务。`;
 }
 
-app.listen(PORT, () => {
-  console.log(`✅ AI简历优化大师 已启动`);
-  console.log(`📍 访问地址: http://localhost:${PORT}`);
-  console.log(`⏰ 启动时间: ${new Date().toLocaleString('zh-CN')}`);
-});
+// 导出 app 给 Vercel serverless 使用
+module.exports = app;
+
+// 本地开发时才启动服务器
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`✅ AI简历优化大师 已启动`);
+    console.log(`📍 访问地址: http://localhost:${PORT}`);
+    console.log(`⏰ 启动时间: ${new Date().toLocaleString('zh-CN')}`);
+  });
+}
