@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI简历优化大师 - 让你的简历脱颖而出</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:#f0f4f8;color:#333;line-height:1.6}
+.container{max-width:900px;margin:0 auto;padding:20px}
+header{text-align:center;padding:40px 20px;background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;border-radius:12px;margin-bottom:30px}
+header h1{font-size:2em;margin-bottom:8px}
+header p{opacity:0.9;font-size:1.1em}
+.section{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+textarea{width:100%;min-height:250px;padding:16px;border:2px solid #e0e0e0;border-radius:8px;font-size:15px;resize:vertical;transition:border-color .3s}
+textarea:focus{outline:none;border-color:#1a73e8}
+.btn{display:inline-block;padding:14px 40px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;transition:all .3s;font-weight:600}
+.btn:hover{background:#1557b0;transform:translateY(-1px);box-shadow:0 4px 15px rgba(26,115,232,0.3)}
+.btn:active{transform:translateY(0)}
+.btn-row{text-align:center;margin-top:16px}
+.char-count{text-align:right;color:#888;font-size:13px;margin-top:6px}
+.loading{text-align:center;padding:40px;display:none}
+.loading .spinner{width:50px;height:50px;border:4px solid #e0e0e0;border-top-color:#1a73e8;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.results{display:none}
+.score-display{text-align:center;padding:30px 0}
+.score-circle{width:140px;height:140px;border-radius:50%;background:conic-gradient(#1a73e8 calc(var(--score) * 1%),#e8f0fe 0);display:inline-flex;align-items:center;justify-content:center;position:relative}
+.score-circle::before{content:'';width:110px;height:110px;border-radius:50%;background:#fff;position:absolute}
+.score-num{position:relative;z-index:1;font-size:42px;font-weight:700;color:#1a73e8}
+.score-label{margin-top:10px;font-size:18px;color:#555}
+.detail-scores{display:flex;flex-wrap:wrap;gap:16px;margin:20px 0}
+.detail-item{flex:1;min-width:150px;background:#f8faff;border-radius:8px;padding:16px;text-align:center}
+.detail-item .label{font-size:14px;color:#666;margin-bottom:8px}
+.detail-item .bar{height:8px;background:#e8f0fe;border-radius:4px;overflow:hidden}
+.detail-item .bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.detail-item .num{font-size:24px;font-weight:700;margin-top:8px;color:#1a73e8}
+.suggestion-card{background:#f8faff;border-left:4px solid #1a73e8;padding:16px;margin:12px 0;border-radius:0 8px 8px 0}
+.suggestion-card.important{border-left-color:#e53935}
+.suggestion-card h4{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:15px}
+.suggestion-card .level{font-size:12px;padding:2px 8px;border-radius:4px;color:#fff;background:#1a73e8}
+.suggestion-card.important .level{background:#e53935}
+.suggestion-card p{font-size:14px;color:#555}
+.optimized-box{position:relative;background:#f0f7ff;border:1px solid #cce0ff;border-radius:8px;padding:20px;margin-top:16px;white-space:pre-wrap;font-size:14px;line-height:1.8}
+.copy-btn{position:absolute;top:10px;right:10px;padding:6px 16px;background:#1a73e8;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px}
+.copy-btn:hover{background:#1557b0}
+.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:20px}
+.plan{background:#fff;border:2px solid #e0e0e0;border-radius:12px;padding:20px;text-align:center;transition:all .3s}
+.plan:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,0.1)}
+.plan.featured{border-color:#1a73e8;position:relative}
+.plan.featured::before{content:'推荐';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#1a73e8;color:#fff;padding:2px 16px;border-radius:10px;font-size:13px}
+.plan h3{font-size:18px;margin:10px 0}
+.plan .price{font-size:32px;font-weight:700;color:#1a73e8}
+.plan .price span{font-size:14px;color:#888}
+.plan ul{list-style:none;padding:16px 0;text-align:left}
+.plan ul li{padding:6px 0;font-size:14px;color:#555}
+.plan ul li::before{content:'✅ ';color:#4caf50}
+footer{text-align:center;padding:20px;color:#999;font-size:13px}
+@media(max-width:600px){
+  header h1{font-size:1.5em}
+  .detail-scores{flex-direction:column}
+  .score-circle{width:120px;height:120px}
+  .score-circle::before{width:94px;height:94px}
+  .score-num{font-size:34px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🤖 AI简历优化大师</h1>
+    <p>粘贴你的简历，AI帮你分析评分并给出专业优化建议</p>
+  </header>
+
+  <div class="section">
+    <h2 style="margin-bottom:12px">📝 粘贴你的简历内容</h2>
+    <textarea id="resumeText" placeholder="请将你的简历内容粘贴到这里...&#10;&#10;支持格式：&#10;- 纯文本简历&#10;- 从Word/PDF复制的文字&#10;- 在线简历复制的文字&#10;&#10;内容越详细，分析越准确！"></textarea>
+    <div class="char-count">已输入 <span id="charCount">0</span> 字</div>
+    <div class="btn-row">
+      <button class="btn" id="analyzeBtn" onclick="analyzeResume()">🔍 开始分析优化</button>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>AI正在分析你的简历，请稍候...</p>
+  </div>
+
+  <div class="results" id="results">
+    <div class="section">
+      <h2 style="text-align:center;margin-bottom:20px">📊 简历评分</h2>
+      <div class="score-display">
+        <div class="score-circle" id="scoreCircle" style="--score:0">
+          <span class="score-num" id="scoreNum">0</span>
+        </div>
+        <div class="score-label" id="scoreLabel">分析中...</div>
+      </div>
+      <div class="detail-scores" id="detailScores"></div>
+    </div>
+
+    <div class="section">
+      <h2 style="margin-bottom:16px">💡 优化建议</h2>
+      <div id="suggestions"></div>
+      <p id="tips" style="margin-top:16px;padding:12px;background:#fff8e1;border-radius:8px;font-size:13px;color:#666"></p>
+    </div>
+
+    <div class="section">
+      <h2 style="margin-bottom:16px">✨ 优化版简历</h2>
+      <div class="optimized-box" id="optimizedText"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 style="text-align:center;margin-bottom:8px">💎 会员定价</h2>
+    <p style="text-align:center;color:#888;margin-bottom:16px">选择适合你的方案</p>
+    <div class="pricing">
+      <div class="plan">
+        <div style="font-size:28px">🆓</div>
+        <h3>免费体验</h3>
+        <div class="price">0<span>元</span></div>
+        <ul>
+          <li>每天1次免费分析</li>
+          <li>基础评分报告</li>
+          <li>3条优化建议</li>
+        </ul>
+      </div>
+      <div class="plan featured">
+        <div style="font-size:28px">⭐</div>
+        <h3>基础会员</h3>
+        <div class="price">9.9<span>元/月</span></div>
+        <ul>
+          <li>每天5次分析</li>
+          <li>完整评分+详细建议</li>
+          <li>AI优化版简历</li>
+          <li>3套简历模板</li>
+        </ul>
+      </div>
+      <div class="plan">
+        <div style="font-size:28px">👑</div>
+        <h3>高级会员</h3>
+        <div class="price">29.9<span>元/月</span></div>
+        <ul>
+          <li>无限次分析</li>
+          <li>针对性岗位优化</li>
+          <li>面试问题预测</li>
+          <li>10套高级模板</li>
+          <li>一对一AI咨询</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 AI简历优化大师 · 让每一份简历都闪耀</p>
+  </footer>
+</div>
+
+<script>
+const resumeText = document.getElementById('resumeText');
+const charCount = document.getElementById('charCount');
+
+resumeText.addEventListener('input', function() {
+  charCount.textContent = this.value.length;
+});
+
+async function analyzeResume() {
+  const text = resumeText.value.trim();
+  if (text.length < 50) {
+    alert('简历内容太短，请粘贴完整的简历信息（至少50字）');
+    return;
+  }
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('analyzeBtn').textContent = '⏳ 分析中...';
+
+  try {
+    const res = await fetch('/api/optimize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      displayResults(data);
+    } else {
+      alert(data.message);
+    }
+  } catch (e) {
+    alert('分析失败，请检查网络连接后重试');
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('analyzeBtn').textContent = '🔍 开始分析优化';
+  }
+}
+
+function displayResults(data) {
+  // 总分
+  const score = data.score;
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('scoreCircle').style.setProperty('--score', score);
+  
+  let label = '需要大幅改进';
+  if (score >= 90) label = '🌟 优秀简历，竞争力很强';
+  else if (score >= 75) label = '👍 良好，小幅优化即可';
+  else if (score >= 60) label = '💪 一般，有明显改进空间';
+  else if (score >= 45) label = '⚠️ 较弱，需要重点优化';
+  document.getElementById('scoreLabel').textContent = label;
+
+  // 分项评分
+  const detailsHtml = Object.values(data.details).map(d => {
+    const color = d.score >= 80 ? '#4caf50' : d.score >= 60 ? '#ff9800' : '#e53935';
+    return `<div class="detail-item">
+      <div class="label">${d.label}</div>
+      <div class="bar"><div class="bar-fill" style="width:${d.score}%;background:${color}"></div></div>
+      <div class="num" style="color:${color}">${d.score}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('detailScores').innerHTML = detailsHtml;
+
+  // 优化建议
+  const sugHtml = data.suggestions.map(s => {
+    const cls = s.level === '重要' ? 'important' : '';
+    return `<div class="suggestion-card ${cls}">
+      <h4>${s.category} <span class="level">${s.level}</span></h4>
+      <p>${s.text}</p>
+    </div>`;
+  }).join('');
+  document.getElementById('suggestions').innerHTML = sugHtml;
+
+  // 优化后文本
+  document.getElementById('optimizedText').textContent = data.optimizedText;
+  document.getElementById('tips').textContent = data.tips;
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function copyOptimized() {
+  const text = document.getElementById('optimizedText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✅ 已复制';
+    setTimeout(() => btn.textContent = '📋 复制', 2000);
+  });
+}
+</script>
+</body>
+</html>

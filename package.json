@@ -1,0 +1,13 @@
+{
+  "name": "resume-optimizer",
+  "version": "1.0.0",
+  "description": "AI简历优化工具 - 在线简历分析与优化平台",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  }
+}
