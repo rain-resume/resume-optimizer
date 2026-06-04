@@ -1,5 +1,10 @@
 const express = require('express');
 const path = require('path');
+const axios = require('axios');
+
+// DeepSeek API 配置（国产AI，速度快）
+const DEEPSEEK_API_KEY = 'sk-8194c3c3e37a456abe63de19207bfcf3';
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 const app = express();
 const PORT = 3000;
@@ -19,8 +24,8 @@ app.use((req, res, next) => {
 // 静态文件服务
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 简历优化API
-app.post('/api/optimize', (req, res) => {
+// 简历优化API - 调用真实AI
+app.post('/api/optimize', async (req, res) => {
   const { text } = req.body;
   
   if (!text || text.trim().length < 50) {
@@ -30,54 +35,74 @@ app.post('/api/optimize', (req, res) => {
     });
   }
 
-  // 模拟AI分析结果
-  const wordCount = text.trim().length;
-  
-  // 根据简历长度动态调整评分，让结果更真实
-  const baseScore = Math.min(95, 45 + Math.floor(wordCount / 30) + Math.floor(Math.random() * 10));
-  
-  const result = {
-    success: true,
-    score: baseScore,
-    details: {
-      workExperience: { score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 5)), label: '工作经历' },
-      education: { score: Math.min(100, baseScore + Math.floor(Math.random() * 15 - 5)), label: '教育背景' },
-      skills: { score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 8)), label: '专业技能' },
-      format: { score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 3)), label: '排版格式' },
-      keywords: { score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 5)), label: '关键词匹配' }
-    },
-    suggestions: [
+  try {
+    // 调用 DeepSeek AI API
+    const aiResponse = await axios.post(
+      DEEPSEEK_API_URL,
       {
-        category: '内容优化',
-        level: '重要',
-        text: '建议在每段工作经历中增加"量化成果"，例如"提升转化率30%"比"负责优化转化率"更有说服力。用数字说话能让HR快速抓住亮点。'
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'system',
+            content: '你是一位专业的简历优化师。分析用户简历，给出评分、具体优化建议，并生成优化后的简历版本。评分要客观（通常 40-75 分），建议要具体可操作。'
+          },
+          {
+            role: 'user',
+            content: `请分析并优化以下简历：\n\n${text}\n\n返回 JSON 格式：{"score": 评分(0-100), "details": {"workExperience": {"score": 分数, "label": "工作经历"}, "education": {"score": 分数, "label": "教育背景"}, "skills": {"score": 分数, "label": "专业技能"}, "format": {"score": 分数, "label": "排版格式"}, "keywords": {"score": 分数, "label": "关键词匹配"}}, "suggestions": [{"category": "分类", "level": "重要/建议", "text": "建议内容"}], "optimizedText": "优化后的完整简历文本"}`
+          }
+        ],
+        temperature: 0.7
       },
       {
-        category: '结构优化',
-        level: '建议',
-        text: '工作经历建议采用STAR法则描述：情境(Situation)→任务(Task)→行动(Action)→结果(Result)，让每段经历更有逻辑性和可读性。'
-      },
-      {
-        category: '关键词优化',
-        level: '重要',
-        text: '建议根据目标岗位的JD（职位描述），提取核心关键词并自然融入简历。ATS系统会优先匹配包含关键岗位词汇的简历。'
-      },
-      {
-        category: '格式优化',
-        level: '建议',
-        text: '简历建议控制在1-2页A4纸，重要信息放前半部分。避免使用花哨的模板，简洁专业的排版更容易获得面试机会。'
-      },
-      {
-        category: '技能展示',
-        level: '建议',
-        text: '技能描述建议分类展示（专业技能/工具技能/软技能），并标注熟练程度。避免堆砌与目标岗位无关的技能。'
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
       }
-    ],
-    optimizedText: generateOptimizedText(text),
-    tips: '简历优化建议仅供参考，请结合自身实际情况进行调整。建议投递前让朋友或前辈帮忙审阅。'
-  };
+    );
 
-  res.json(result);
+    // 解析 AI 返回的结果
+    const aiResult = JSON.parse(aiResponse.data.choices[0].message.content);
+    
+    res.json({
+      success: true,
+      ...aiResult,
+      tips: '简历优化建议仅供参考，请结合自身实际情况进行调整。'
+    });
+  } catch (error) {
+    console.error('AI API 调用失败:', error.message);
+    
+    // 如果 AI 调用失败，返回模拟结果作为备用
+    const wordCount = text.trim().length;
+    const baseScore = Math.min(95, 45 + Math.floor(wordCount / 30) + Math.floor(Math.random() * 10));
+    
+    res.json({
+      success: true,
+      score: baseScore,
+      details: {
+        workExperience: { score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 5)), label: '工作经历' },
+        education: { score: Math.min(100, baseScore + Math.floor(Math.random() * 15 - 5)), label: '教育背景' },
+        skills: { score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 8)), label: '专业技能' },
+        format: { score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 3)), label: '排版格式' },
+        keywords: { score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 5)), label: '关键词匹配' }
+      },
+      suggestions: [
+        {
+          category: '内容优化',
+          level: '重要',
+          text: '建议在每段工作经历中增加"量化成果"，例如"提升转化率30%"比"负责优化转化率"更有说服力。'
+        },
+        {
+          category: '结构优化',
+          level: '建议',
+          text: '工作经历建议采用STAR法则描述：情境→任务→行动→结果，让经历更有逻辑性。'
+        }
+      ],
+      optimizedText: generateOptimizedText(text),
+      tips: 'AI API 暂时不可用，当前为模拟结果。请配置 API Key 以启用真实 AI 优化。'
+    });
+  }
 });
 
 // 生成优化后的简历文本

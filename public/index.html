@@ -103,9 +103,59 @@ footer{text-align:center;padding:20px;color:#999;font-size:13px}
       <p id="tips" style="margin-top:16px;padding:12px;background:#fff8e1;border-radius:8px;font-size:13px;color:#666"></p>
     </div>
 
-    <div class="section">
-      <h2 style="margin-bottom:16px">✨ 优化版简历</h2>
-      <div class="optimized-box" id="optimizedText"></div>
+    <div class="section" id="fullResultSection" style="display:none">
+      <h2 style="margin-bottom:16px">✨ 完整优化结果</h2>
+      
+      <!-- 付费提示 -->
+      <div id="payPrompt" style="text-align:center;padding:30px;background:#fff8e1;border-radius:12px;margin-bottom:20px">
+        <p style="font-size:18px;font-weight:600;color:#e65100;margin-bottom:8px">🔒 完整优化结果需要解锁</p>
+        <p style="color:#666;margin-bottom:16px">包含：5条详细优化建议 + AI优化版完整简历</p>
+        <button class="btn" onclick="showPayQR()" style="background:#e65100;font-size:18px;padding:16px 48px">💰 解锁完整报告 · ¥9.9</button>
+      </div>
+
+      <!-- 支付二维码弹窗 -->
+      <div id="payModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;text-align:center;position:relative">
+          <span onclick="closePayModal()" style="position:absolute;top:8px;right:16px;font-size:28px;cursor:pointer;color:#999">&times;</span>
+          <h3 style="margin-bottom:8px">💳 扫码支付 ¥9.9</h3>
+          <p style="color:#666;font-size:14px;margin-bottom:20px">支持微信 / 支付宝</p>
+          
+          <!-- 微信支付 -->
+          <div style="margin-bottom:16px">
+            <p style="font-size:14px;font-weight:600;margin-bottom:8px">📱 微信扫码</p>
+            <div style="width:200px;height:200px;background:#f5f5f5;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto">
+              <img src="/api/qrcode?pay=wechat" alt="微信支付" style="max-width:180px;max-height:180px" onerror="this.parentElement.innerHTML='<p style=color:#888>加载中...</p>'">
+            </div>
+          </div>
+          
+          <!-- 支付宝 -->
+          <div>
+            <p style="font-size:14px;font-weight:600;margin-bottom:8px">💙 支付宝扫码</p>
+            <div style="width:200px;height:200px;background:#f5f5f5;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto">
+              <img src="/api/qrcode?pay=alipay" alt="支付宝" style="max-width:180px;max-height:180px" onerror="this.parentElement.innerHTML='<p style=color:#888>加载中...</p>'">
+            </div>
+          </div>
+
+          <p style="margin-top:16px;font-size:13px;color:#999">支付完成后，点击下方按钮解锁</p>
+          <button class="btn" onclick="unlockFull()" style="margin-top:12px;background:#4caf50">✅ 我已支付，解锁内容</button>
+        </div>
+      </div>
+
+      <!-- 解锁后显示的完整内容 -->
+      <div id="unlockedContent" style="display:none">
+        <div class="section" style="margin-top:16px">
+          <h3 style="margin-bottom:12px">💡 全部优化建议</h3>
+          <div id="allSuggestions"></div>
+        </div>
+        <div class="section">
+          <h3 style="margin-bottom:12px">✨ AI优化版简历</h3>
+          <div class="optimized-box" id="optimizedText"></div>
+          <div class="btn-row" style="margin-top:12px">
+            <button class="btn" onclick="copyOptimized()" style="font-size:14px;padding:10px 24px">📋 复制优化简历</button>
+            <button class="btn" onclick="downloadResume()" style="background:#4caf50;font-size:14px;padding:10px 24px">⬇️ 下载Word文档</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -196,7 +246,12 @@ async function analyzeResume() {
   }
 }
 
+// 存储完整数据用于解锁
+let fullData = null;
+
 function displayResults(data) {
+  fullData = data; // 保存完整数据
+  
   // 总分
   const score = data.score;
   document.getElementById('scoreNum').textContent = score;
@@ -220,8 +275,9 @@ function displayResults(data) {
   }).join('');
   document.getElementById('detailScores').innerHTML = detailsHtml;
 
-  // 优化建议
-  const sugHtml = data.suggestions.map(s => {
+  // 显示前2条免费建议
+  const freeSuggestions = data.suggestions.slice(0, 2);
+  const sugHtml = freeSuggestions.map(s => {
     const cls = s.level === '重要' ? 'important' : '';
     return `<div class="suggestion-card ${cls}">
       <h4>${s.category} <span class="level">${s.level}</span></h4>
@@ -229,13 +285,68 @@ function displayResults(data) {
     </div>`;
   }).join('');
   document.getElementById('suggestions').innerHTML = sugHtml;
+  document.getElementById('tips').textContent = `还有 ${data.suggestions.length - 2} 条深度优化建议 + 完整AI优化版简历，解锁查看 👇`;
 
-  // 优化后文本
-  document.getElementById('optimizedText').textContent = data.optimizedText;
-  document.getElementById('tips').textContent = data.tips;
-
+  // 显示结果区域和付费区域
   document.getElementById('results').style.display = 'block';
+  document.getElementById('fullResultSection').style.display = 'block';
   document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// 显示支付弹窗
+function showPayQR() {
+  document.getElementById('payModal').style.display = 'flex';
+}
+
+// 关闭支付弹窗
+function closePayModal() {
+  document.getElementById('payModal').style.display = 'none';
+}
+
+// 解锁完整内容
+function unlockFull() {
+  if (!fullData) return;
+  
+  // 显示全部建议
+  const allSugHtml = fullData.suggestions.map(s => {
+    const cls = s.level === '重要' ? 'important' : '';
+    return `<div class="suggestion-card ${cls}">
+      <h4>${s.category} <span class="level">${s.level}</span></h4>
+      <p>${s.text}</p>
+    </div>`;
+  }).join('');
+  document.getElementById('allSuggestions').innerHTML = allSugHtml;
+  
+  // 显示优化后文本
+  document.getElementById('optimizedText').textContent = fullData.optimizedText;
+  
+  // 隐藏支付提示，显示解锁内容
+  document.getElementById('payPrompt').style.display = 'none';
+  document.getElementById('unlockedContent').style.display = 'block';
+  closePayModal();
+  
+  // 记录支付（实际项目中这里应该验证支付状态）
+  console.log('用户已支付解锁');
+}
+
+// 复制优化简历
+function copyOptimized() {
+  const text = document.getElementById('optimizedText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    alert('✅ 已复制到剪贴板！');
+  });
+}
+
+// 下载Word文档
+function downloadResume() {
+  const text = document.getElementById('optimizedText').textContent;
+  const blob = new Blob([text], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'AI优化简历.doc';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function copyOptimized() {
