@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 简历优化 - 智能简历分析工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .input-section, .output-section {
+            flex: 1;
+            padding: 40px;
+        }
+
+        .input-section {
+            border-right: 2px solid #f0f0f0;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title span {
+            font-size: 1.2em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .output-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            min-height: 400px;
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-size: 16px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-size: 18px;
+            padding: 50px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .error {
+            color: #e74c3c;
+            padding: 20px;
+            background: #ffe6e6;
+            border-radius: 10px;
+        }
+
+        .success {
+            color: #27ae60;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .feature-item {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .feature-item .icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .feature-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .feature-item p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .input-section {
+                border-right: none;
+                border-bottom: 2px solid #f0f0f0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 AI 简历优化工具</h1>
+            <p>基于 DeepSeek 大模型，智能分析并优化您的简历</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="section-title">
+                    <span>📝</span>
+                    <span>输入简历</span>
+                </div>
+                <textarea id="resumeInput" placeholder="请粘贴您的简历内容...
+
+示例格式：
+{
+  "姓名": "张三",
+  "手机": "13800138000",
+  "邮箱": "zhangsan@example.com",
+  "求职意向": "Python开发工程师",
+  "教育背景": "XX大学 计算机科学 本科 2019-2023",
+  "工作经历": "无",
+  "项目经验": "无",
+  "专业技能": "Python、MySQL、Redis",
+  "自我评价": "认真负责，学习能力强"
+}"></textarea>
+                <div class="button-group">
+                    <button class="btn-primary" id="optimizeBtn" onclick="optimizeResume()">✨ 优化简历</button>
+                    <button class="btn-secondary" onclick="clearInput()">🗑️ 清空</button>
+                </div>
+            </div>
+
+            <div class="output-section">
+                <div class="section-title">
+                    <span>✅</span>
+                    <span>优化结果</span>
+                </div>
+                <div class="output-content" id="output">
+                    <div style="text-align: center; color: #999; padding-top: 150px;">
+                        优化后的简历将显示在这里...
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="copyResult()">📋 复制结果</button>
+                    <button class="btn-secondary" onclick="downloadResult()">💾 下载结果</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="icon">🎯</div>
+                <h3>精准优化</h3>
+                <p>AI 深度分析简历内容，提供精准的优化建议</p>
+            </div>
+            <div class="feature-item">
+                <div class="icon">⚡</div>
+                <h3>快速高效</h3>
+                <p>30秒内完成简历优化，节省大量时间</p>
+            </div>
+            <div class="feature-item">
+                <div class="icon">📊</div>
+                <h3>专业建议</h3>
+                <p>基于行业最佳实践，提供专业优化方案</p>
+            </div>
+            <div class="feature-item">
+                <div class="icon">🔒</div>
+                <h3>安全可靠</h3>
+                <p>数据加密传输，保护您的隐私安全</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DeepSeek API 配置
+        const DEEPSEEK_API_KEY = '%%DEEPSEEK_API_KEY%%';
+        const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+
+        async function optimizeResume() {
+            const input = document.getElementById('resumeInput').value.trim();
+            const output = document.getElementById('output');
+            const btn = document.getElementById('optimizeBtn');
+
+            if (!input) {
+                alert('请先输入或粘贴简历内容！');
+                return;
+            }
+
+            // 显示加载状态
+            output.innerHTML = '<div class="loading">AI 正在优化简历，请稍候</div>';
+            btn.disabled = true;
+            btn.textContent = '优化中...';
+
+            try {
+                // 调用 DeepSeek API
+                const response = await fetch(DEEPSEEK_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是一位资深 HR 专家和简历优化师。你的任务是优化用户提供的简历，使其更加专业、有吸引力。请从以下几个方面优化：1. 语言表达 2. 结构优化 3. 关键词优化 4. 成就量化 5. 格式规范。直接输出优化后的简历内容，不要添加多余的解释。'
+                            },
+                            {
+                                role: 'user',
+                                content: `请优化以下简历：\n\n${input}`
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 请求失败: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const optimizedResume = data.choices[0].message.content;
+
+                // 显示优化结果
+                output.innerHTML = `<div class="success">${escapeHtml(optimizedResume)}</div>`;
+                output.dataset.result = optimizedResume;
+
+            } catch (error) {
+                console.error('优化失败:', error);
+                output.innerHTML = `<div class="error">❌ 优化失败: ${error.message}<br><br>请检查网络连接后重试，或联系管理员。</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ 优化简历';
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('resumeInput').value = '';
+            document.getElementById('output').innerHTML = '<div style="text-align: center; color: #999; padding-top: 150px;">优化后的简历将显示在这里...</div>';
+            delete document.getElementById('output').dataset.result;
+        }
+
+        function copyResult() {
+            const result = document.getElementById('output').dataset.result;
+            if (!result) {
+                alert('请先优化简历！');
+                return;
+            }
+
+            navigator.clipboard.writeText(result).then(() => {
+                alert('✅ 已复制到剪贴板！');
+            }).catch(err => {
+                alert('❌ 复制失败，请手动选择文本复制');
+            });
+        }
+
+        function downloadResult() {
+            const result = document.getElementById('output').dataset.result;
+            if (!result) {
+                alert('请先优化简历！');
+                return;
+            }
+
+            const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `优化后的简历_${new Date().getTime()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;');
+        }
+
+        // 支持 Ctrl+Enter 快捷键
+        document.getElementById('resumeInput').addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                optimizeResume();
+            }
+        });
+    </script>
+</body>
+</html>
